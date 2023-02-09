@@ -17,7 +17,15 @@ class _NotesDetailState extends State<NotesDetail> {
   var dateselected = DateFormat.yMd().format(DateTime.now());
   var productFound =
       NotesModel(id: '', userid: '', title: '', content: '', dateAdded: '');
+  var dateController = TextEditingController();
   final _key = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    dateController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -26,8 +34,9 @@ class _NotesDetailState extends State<NotesDetail> {
           .findById(widget.id);
       setState(() {
         dateselected = productFound.dateAdded == null
-            ? DateFormat.yMd().format(DateTime.now())
+            ? DateFormat.yMd().format(DateTime.now()).toString()
             : productFound.dateAdded!;
+        dateController = TextEditingController(text: dateselected);
       });
     } else {
       productFound = NotesModel(
@@ -44,6 +53,7 @@ class _NotesDetailState extends State<NotesDetail> {
     }
     _key.currentState!.save();
     if (widget.id != '') {
+      print(productFound.dateAdded);
       Provider.of<NotesProvider>(context, listen: false)
           .updateNote(widget.id, productFound)
           .then((_) {
@@ -60,6 +70,7 @@ class _NotesDetailState extends State<NotesDetail> {
 
   @override
   Widget build(BuildContext context) {
+    print(dateController.text);
     return Scaffold(
       appBar: AppBar(title: Text('notes details')),
       body: Container(
@@ -182,7 +193,7 @@ class _NotesDetailState extends State<NotesDetail> {
               ),
               TextFormField(
                 keyboardType: TextInputType.datetime,
-                initialValue: productFound.dateAdded,
+                controller: dateController,
                 decoration: InputDecoration(
                     labelText: 'date added',
                     focusedBorder: OutlineInputBorder(
@@ -208,25 +219,27 @@ class _NotesDetailState extends State<NotesDetail> {
                             .then((value) {
                           if (value == null) {
                             setState(() {
-                              dateselected =
-                                  DateFormat.yMd().format(DateTime.now());
+                              dateselected = DateTime.now().toIso8601String();
                             });
+                            dateController.text = dateselected;
                           } else {
                             setState(() {
-                              dateselected = DateFormat.yMd().format(value);
+                              dateselected = value.toIso8601String();
                             });
+                            dateController.text = dateselected;
                           }
                         });
                       },
                     )),
                 textInputAction: TextInputAction.done,
                 onSaved: (newValue) {
+                  newValue = dateController.text;
                   productFound = NotesModel(
                       id: productFound.id,
                       userid: productFound.userid,
                       title: productFound.title,
                       content: productFound.content,
-                      dateAdded: newValue.toString());
+                      dateAdded: newValue);
                 },
                 validator: (value) {
                   if (value!.isEmpty) {
